@@ -302,7 +302,7 @@ def main():
 
         # check for collisions
         pipe_collisions = [p.is_bird_collision((BIRD_X, bird_y)) for p in pipes]
-        pjerkface_collisions = [jerk.is_jerkface_collision((BIRD_X, bird_y)) for jerk in jerkfaces]
+        jerkface_collisions = [jerk.is_jerkface_collision((BIRD_X, bird_y)) for jerk in jerkfaces]
 
         if 0 >= bird_y:
             pass
