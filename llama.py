@@ -32,6 +32,37 @@ BIRD_WIDTH = BIRD_HEIGHT = 32
 JERKFACE_WIDTH = JERKFACE_HEIGHT = 32
 
 
+class Jerk:
+    """
+    Represents the Jerk flying across the screen.
+
+    """
+    def __init__(self):
+        self.height = 32
+        self.width = 32
+        self.x = WIN_WIDTH
+        self.y = randint(480, 510)
+        # self.flip =
+        # self.flop =
+        self.initial_position = (self.x, self.y)
+
+    def is_jerkface_collision(self, llama_position):
+        """Get whether the llama crashed into a flying bird.
+
+        Arguments:
+        llama_position: The llama's position on screen, as a tuple in
+            the form (X, Y).
+        """
+        bx, by = self.x, self.y
+        print(bx)
+        print(by)
+        print(self)
+
+        in_x_range = False
+        in_y_range = False
+        return in_x_range and in_y_range
+
+
 class PipePair:
     """Represents an obstacle.
 
@@ -141,11 +172,11 @@ def load_images():
             'mountain-end': load_image('mountain_end.png'),
             'mountain-body': load_image('mountain_body.png'),
             'explosion': load_image('explosion.png'),
-            # images for animating the flapping bird -- animated GIFs are
-            # not supported in pygame
             'llama-wingup': load_image('llama_wing_up.png'),
-            'llama-wingdown': load_image('llama_wing_down.png')}
-
+            'llama-wingdown': load_image('llama_wing_down.png'),
+            'jerkface-wingup': load_image('jerkface_wing_up.png'),
+            'jerkface-wingdown': load_image('jerkface_wing_down.png')
+            }
 
 def get_frame_jump_height(jump_step):
     """Calculate how high the bird should jump in a particular frame.
@@ -197,6 +228,13 @@ def random_pipe_pair(pipe_end_img, pipe_body_img):
     bottom_pipe_pieces += 1
     return PipePair(surface, 0, bottom_pipe_pieces)
 
+def add_jerkface(jerks):
+    """
+    Add a new jerk to the jerkfaces to give the player a challenge.
+    """
+    jerk = Jerk()
+    jerks.append(jerk)
+
 
 def main():
     """The application's entry point.
@@ -227,7 +265,7 @@ def main():
     jerkfaces = []
 
 
-    pygame.time.set_timer(HEY_LOOK_A_BIRD, randint(3000,7500))
+    pygame.time.set_timer(HEY_LOOK_A_BIRD, randint(5000,7000))
 
 
     steps_to_jump = 2
@@ -253,7 +291,7 @@ def main():
                 steps_to_jump = BIRD_JUMP_STEPS
             elif e.type == HEY_LOOK_A_BIRD:
                 print("A jerkface flies by... ")
-
+                add_jerkface(jerkfaces)
             elif e.type == EVENT_NEWPIPE:
                 pp = random_pipe_pair(images['mountain-end'], images['mountain-body'])
                 pipes.append(pp)
@@ -272,6 +310,20 @@ def main():
             else:
                 display_surface.blit(p.surface, (p.x, 0))
 
+        for jerk in jerkfaces:
+            jerk.x -= FRAME_ANIMATION_WIDTH
+            print(jerk.x)
+            if jerk.x <= -jerk.width:  # jerkface is off screen
+                jerkfaces.remove(jerk)
+                print("Removing Jerk")
+            else:
+                if pygame.time.get_ticks() % 500 >= 250:
+                    print("Displaying jerk up")
+                    display_surface.blit(images['jerkface-wingup'], (jerk.x, jerk.y))
+                else:
+                    print("Displaying jerk down")
+                    display_surface.blit(images['jerkface-wingdown'], (jerk.x, jerk.y))
+
         # calculate position of jumping bird
         if steps_to_jump > 0:
             bird_y -= get_frame_jump_height(BIRD_JUMP_STEPS - steps_to_jump)
@@ -279,8 +331,7 @@ def main():
         else:
             bird_y += FRAME_BIRD_DROP_HEIGHT
 
-        # because pygame doesn't support animated GIFs, we have to
-        # animate the flapping bird ourselves
+        # animate the flying llama
         if pygame.time.get_ticks() % 500 >= 250:
             display_surface.blit(images['llama-wingup'], (BIRD_X, bird_y))
         else:
@@ -292,7 +343,6 @@ def main():
                 score += 1
                 p.score_counted = True
                 dingy_effect.play()
-
 
         score_surface = score_font.render(str(score), True, (255, 255, 255))
         score_x = WIN_WIDTH/2 - score_surface.get_width()/2
@@ -310,7 +360,7 @@ def main():
         if bird_y >= WIN_HEIGHT:
             pygame.mixer.music.stop()
             fall_effect.play()
-            #display_surface.blit(images['explosion'], (BIRD_X, bird_y))
+            # display_surface.blit(images['explosion'], (BIRD_X, bird_y))
 
             pygame.display.update()
             print('You crashed! Score: %i' % score)
